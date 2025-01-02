@@ -3,19 +3,15 @@ version: '3.9'
 services:
   wordpress:
     image: 'wordpress:latest'
-    container_name: wp_site
     volumes:
-      - wordpress-files:/var/www/html
-      - ./conf/php.ini:/usr/local/etc/php/conf.d/php.ini
+      - 'wordpress-files:/var/www/html'
+      - './conf/php.ini:/usr/local/etc/php/conf.d/php.ini:ro'
     environment:
       - SERVICE_FQDN_WORDPRESS
       - WORDPRESS_DB_HOST=mariadb
       - WORDPRESS_DB_USER=$SERVICE_USER_WORDPRESS
       - WORDPRESS_DB_PASSWORD=$SERVICE_PASSWORD_WORDPRESS
       - WORDPRESS_DB_NAME=wordpress
-      - WORDPRESS_CONFIG_EXTRA=
-        define('WP_CACHE', true);
-        define('WP_CACHE_KEY_SALT', 'your_unique_salt_here');
     depends_on:
       - mariadb
     networks:
@@ -23,17 +19,16 @@ services:
 
   litespeed:
     image: 'litespeedtech/openlitespeed:latest'
-    container_name: wp_litespeed
     volumes:
-      - wordpress-files:/var/www/html
-      - ./conf/httpd_config.conf:/usr/local/lsws/conf/httpd_config.conf
-      - ./conf/vhosts:/usr/local/lsws/conf/vhosts/
-      - litespeed-logs:/usr/local/lsws/logs/
+      - 'wordpress-files:/var/www/html'
+      - './conf:/usr/local/lsws/custom_conf'  # Changed this line
+      - 'litespeed-logs:/usr/local/lsws/logs'
     environment:
-      - PHP_LSAPI_CHILDREN=35
-      - PHP_OPCACHE_ENABLE=1
-      - PHP_OPCACHE_MEMORY_CONSUMPTION=128
-      - PHP_OPCACHE_MAX_ACCELERATED_FILES=4000
+      - OLS_DB_HOST=mariadb
+      - OLS_DB_USER=$SERVICE_USER_WORDPRESS
+      - OLS_DB_PASSWORD=$SERVICE_PASSWORD_WORDPRESS
+      - OLS_DB_NAME=wordpress
+      - CUSTOM_CONF_PATH=/usr/local/lsws/custom_conf  # Added this line
     depends_on:
       - wordpress
       - mariadb
@@ -42,9 +37,8 @@ services:
 
   mariadb:
     image: 'mariadb:11'
-    container_name: wp_db
     volumes:
-      - mariadb-data:/var/lib/mysql
+      - 'mariadb-data:/var/lib/mysql'
     environment:
       - MYSQL_ROOT_PASSWORD=$SERVICE_PASSWORD_ROOT
       - MYSQL_DATABASE=wordpress
