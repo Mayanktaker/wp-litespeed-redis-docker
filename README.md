@@ -1,0 +1,1 @@
+# wp-litespeed-redis-docker
